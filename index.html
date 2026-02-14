@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceScript Pro AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mic-active { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            
+            <div class="p-8 bg-indigo-600 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold">VoiceScript AI</h1>
+                    <p class="text-indigo-100">Transkripsi cerdas langsung ke MS Word</p>
+                </div>
+                <div id="statusBadge" class="px-4 py-2 bg-indigo-500 rounded-full text-sm font-semibold flex items-center gap-2">
+                    <span id="statusDot" class="h-2 w-2 bg-green-400 rounded-full"></span>
+                    <span id="statusText">Siap</span>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Pilih Bahasa</label>
+                        <select id="langSelect" class="w-full bg-slate-100 border-none rounded-2xl py-3 px-4 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="id-ID">🇮🇩 Bahasa Indonesia</option>
+                            <option value="en-US">🇺🇸 English (US)</option>
+                            <option value="ja-JP">🇯🇵 日本語</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-end gap-2 flex-[2] min-w-[300px]">
+                        <button id="startBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                            🎙️ Mulai Rekam
+                        </button>
+                        <button id="stopBtn" class="hidden flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-2xl transition-all mic-active flex items-center justify-center gap-2">
+                            ⏹️ Berhenti
+                        </button>
+                        <button id="clearBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 px-6 rounded-2xl transition-all">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative bg-slate-900 rounded-2xl p-1">
+                    <div id="transcript" class="w-full min-h-[400px] max-h-[600px] overflow-y-auto bg-white rounded-xl p-6 text-slate-800 leading-relaxed text-lg outline-none border-none" contenteditable="true"></div>
+                    <div class="absolute bottom-4 right-6 text-xs font-bold text-slate-300 pointer-events-none">LIVE TRANSCRIPT</div>
+                </div>
+
+                <div class="mt-8 flex flex-col md:flex-row justify-between items-center border-t border-slate-100 pt-6 gap-4">
+                    <div class="flex gap-8 text-sm text-slate-500 font-medium">
+                        <p>Karakter: <span id="charCount" class="text-indigo-600">0</span></p>
+                        <p>Kata: <span id="wordCount" class="text-indigo-600">0</span></p>
+                    </div>
+                    <button id="downloadBtn" class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
+                        💾 Simpan ke MS Word (.docx)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            alert("Browser tidak mendukung Speech API. Gunakan Chrome atau Edge.");
+        }
+
+        const recognition = new SpeechRecognition();
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const transcriptArea = document.getElementById('transcript');
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+
+        // LOGIKA STATE
+        let isRecording = false;
+        let finalTranscript = '';
+
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        // FUNGSI UTAMA
+        function startRecognition() {
+            recognition.lang = document.getElementById('langSelect').value;
+            try {
+                recognition.start();
+            } catch (e) {
+                console.log("Recognition already started");
+            }
+        }
+
+        startBtn.onclick = () => {
+            isRecording = true;
+            finalTranscript = transcriptArea.innerText + (transcriptArea.innerText.length > 0 ? ' ' : '');
+            startRecognition();
+        };
+
+        stopBtn.onclick = () => {
+            isRecording = false;
+            recognition.stop();
+        };
+
+        recognition.onstart = () => {
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+            statusText.innerText = "Mendengarkan...";
+            statusDot.classList.replace('bg-green-400', 'bg-red-500');
+        };
+
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            transcriptArea.innerHTML = finalTranscript + `<span class="text-slate-400 font-normal italic">${interimTranscript}</span>`;
+            
+            // Update Stats
+            const text = transcriptArea.innerText;
+            document.getElementById('charCount').innerText = text.length;
+            document.getElementById('wordCount').innerText = text.trim() ? text.trim().split(/\s+/).length : 0;
+            
+            // Auto scroll ke bawah
+            transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech Error: ", event.error);
+            if (event.error === 'not-allowed') {
+                alert("Izin Mikrofon Ditolak!");
+                isRecording = false;
+            }
+        };
+
+        recognition.onend = () => {
+            // ANTI-MATI: Jika masih dalam mode rekaman, nyalakan kembali otomatis
+            if (isRecording) {
+                console.log("Auto-restarting...");
+                startRecognition();
+            } else {
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                statusText.innerText = "Siap";
+                statusDot.classList.replace('bg-red-500', 'bg-green-400');
+            }
+        };
+
+        document.getElementById('clearBtn').onclick = () => {
+            if(confirm("Hapus semua teks?")) {
+                finalTranscript = '';
+                transcriptArea.innerHTML = '';
+                document.getElementById('charCount').innerText = '0';
+                document.getElementById('wordCount').innerText = '0';
+            }
+        };
+
+        // DOWNLOAD MS WORD
+        document.getElementById('downloadBtn').onclick = async () => {
+            const content = transcriptArea.innerText;
+            if (!content.trim()) return alert("Teks masih kosong!");
+
+            const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = window.docx;
+
+            const doc = new Document({
+                sections: [{
+                    children: [
+                        new Paragraph({
+                            text: "VOICESCRIPT AI TRANSCRIPTION",
+                            heading: HeadingLevel.HEADING_1,
+                            alignment: AlignmentType.CENTER,
+                        }),
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun({
+                                    text: `Dibuat pada: ${new Date().toLocaleString('id-ID')}`,
+                                    italics: true,
+                                    color: "666666"
+                                }),
+                            ],
+                        }),
+                        new Paragraph({ text: "" }), // Spacer
+                        new Paragraph({
+                            children: [new TextRun(content)],
+                        }),
+                    ],
+                }],
+            });
+
+            const blob = await Packer.toBlob(doc);
+            saveAs(blob, `Transkripsi_${Date.now()}.docx`);
+        };
+    </script>
+</body>
+</html>
