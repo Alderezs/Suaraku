@@ -3,86 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceScript Pro AI</title>
+    <title>VoiceScript AI Pro - GitHub Edition</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.2/build/index.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .recording-pulse { animation: pulse 2s infinite; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+        .recording-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
             70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
+        #transcript::-webkit-scrollbar { width: 8px; }
+        #transcript::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
-            <div class="p-8 bg-indigo-600 text-white flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold tracking-tight">VoiceScript AI</h1>
-                    <p class="text-indigo-100 opacity-80">Ubah suara ke MS Word secara real-time</p>
+    <div class="max-w-4xl w-full bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="bg-indigo-600 p-8 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-center md:text-left">VoiceScript AI</h1>
+                <p class="text-indigo-100 text-sm text-center md:text-left">Status: <span id="statusLabel" class="font-bold uppercase tracking-widest">Siap</span></p>
+            </div>
+            <div id="micIndicator" class="h-4 w-4 bg-indigo-400 rounded-full transition-all duration-300"></div>
+        </div>
+
+        <div class="p-6 md:p-10">
+            <div class="flex flex-wrap gap-4 mb-8">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Pilih Bahasa</label>
+                    <select id="langSelect" class="w-full bg-slate-100 border-none rounded-2xl py-3.5 px-4 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <option value="id-ID">🇮🇩 Bahasa Indonesia</option>
+                        <option value="en-US">🇺🇸 English (US)</option>
+                    </select>
                 </div>
-                <div id="statusBadge" class="flex items-center gap-2 px-4 py-2 bg-indigo-500/50 rounded-full border border-indigo-400">
-                    <span id="statusDot" class="h-2 w-2 bg-green-400 rounded-full"></span>
-                    <span id="statusText" class="text-sm font-semibold uppercase tracking-wider">Siap</span>
+
+                <div class="flex-[2] min-w-[280px] flex items-end gap-3">
+                    <button id="startBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                        🎙️ Mulai
+                    </button>
+                    <button id="stopBtn" class="hidden flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-2xl transition-all recording-pulse flex items-center justify-center gap-2">
+                        ⏹️ Berhenti
+                    </button>
+                    <button id="clearBtn" class="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl transition-all font-bold">🗑️</button>
                 </div>
             </div>
 
-            <div class="p-6 md:p-10">
-                <div class="flex flex-wrap gap-4 mb-8">
-                    <div class="flex-1 min-w-[150px]">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Bahasa</label>
-                        <select id="langSelect" class="w-full bg-slate-100 border-none rounded-2xl py-3.5 px-4 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                            <option value="id-ID">🇮🇩 Indonesia</option>
-                            <option value="en-US">🇺🇸 English (US)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex-[2] min-w-[280px] flex items-end gap-3">
-                        <button id="startBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
-                            🎙️ Mulai
-                        </button>
-                        <button id="stopBtn" class="hidden flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-2xl transition-all recording-pulse flex items-center justify-center gap-2">
-                            ⏹️ Berhenti
-                        </button>
-                        <button id="clearBtn" class="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl transition-all font-bold">🗑️</button>
-                    </div>
-                </div>
+            <div class="relative bg-slate-50 rounded-[2rem] p-1 border-2 border-slate-100 focus-within:border-indigo-400 transition-all">
+                <div id="transcript" class="w-full min-h-[350px] max-h-[500px] overflow-y-auto p-8 text-slate-800 leading-relaxed text-lg outline-none scroll-smooth" contenteditable="true" placeholder="Bicara sekarang..."></div>
+                <div class="absolute bottom-6 right-8 text-[10px] font-black text-slate-300 uppercase tracking-widest pointer-events-none">Live Editor</div>
+            </div>
 
-                <div class="relative group">
-                    <div id="transcript" class="w-full min-h-[350px] max-h-[550px] overflow-y-auto bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] p-8 text-slate-800 leading-relaxed text-lg focus:bg-white focus:border-indigo-400 focus:ring-0 outline-none transition-all scroll-smooth" contenteditable="true" placeholder="Bicara sekarang..."></div>
-                    <div class="absolute top-6 right-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] pointer-events-none">Live Editor</div>
+            <div class="mt-8 flex flex-col md:flex-row justify-between items-center gap-6 pt-6 border-t border-slate-100">
+                <div class="flex gap-6 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    <span>Kata: <span id="wordCount" class="text-indigo-600 font-black">0</span></span>
                 </div>
-
-                <div class="mt-8 flex flex-col md:flex-row justify-between items-center gap-6 pt-6 border-t border-slate-100">
-                    <div class="flex gap-6 text-sm font-bold text-slate-400 uppercase tracking-widest">
-                        <span>Kata: <span id="wordCount" class="text-indigo-600">0</span></span>
-                    </div>
-                    <button id="downloadBtn" class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-12 rounded-2xl shadow-xl shadow-emerald-100 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3">
-                        💾 SIMPAN KE MS WORD
-                    </button>
-                </div>
+                <button id="downloadBtn" class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-12 rounded-2xl shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3">
+                    💾 DOWNLOAD KE WORD (.DOCX)
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Inisialisasi Speech Recognition
+        // --- SPEECH RECOGNITION SETUP ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) alert("Gunakan Chrome atau Edge untuk fitur ini.");
+        if (!SpeechRecognition) {
+            alert("Browser tidak mendukung Speech API. Gunakan Google Chrome!");
+        }
 
         const recognition = new SpeechRecognition();
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const transcriptArea = document.getElementById('transcript');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
+        const statusLabel = document.getElementById('statusLabel');
+        const micIndicator = document.getElementById('micIndicator');
+        const wordCountSpan = document.getElementById('wordCount');
 
         let isRecording = false;
         let finalTranscript = '';
@@ -90,7 +92,6 @@
         recognition.continuous = true;
         recognition.interimResults = true;
 
-        // 2. Fungsi Rekam
         startBtn.onclick = () => {
             isRecording = true;
             recognition.lang = document.getElementById('langSelect').value;
@@ -105,76 +106,93 @@
         recognition.onstart = () => {
             startBtn.classList.add('hidden');
             stopBtn.classList.remove('hidden');
-            statusText.innerText = "Mendengarkan";
-            statusDot.classList.replace('bg-green-400', 'bg-red-500');
+            statusLabel.innerText = "Mendengarkan...";
+            micIndicator.classList.replace('bg-indigo-400', 'bg-red-500');
         };
 
         recognition.onresult = (event) => {
-            let interim = '';
+            let interimTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-                else interim += event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
             }
-            transcriptArea.innerHTML = finalTranscript + `<span class="text-slate-400 italic">${interim}</span>`;
-            updateStats();
+            transcriptArea.innerHTML = finalTranscript + `<span class="text-slate-400 italic font-normal">${interimTranscript}</span>`;
+            
+            // Update Word Count
+            const text = transcriptArea.innerText.trim();
+            wordCountSpan.innerText = text ? text.split(/\s+/).length : 0;
+            
+            // Auto-scroll
             transcriptArea.scrollTop = transcriptArea.scrollHeight;
         };
 
         recognition.onend = () => {
-            // Logika Anti-Mati (Auto Restart)
+            // Auto-restart jika terputus sendiri
             if (isRecording) {
                 recognition.start();
             } else {
                 startBtn.classList.remove('hidden');
                 stopBtn.classList.add('hidden');
-                statusText.innerText = "Siap";
-                statusDot.classList.replace('bg-red-500', 'bg-green-400');
+                statusLabel.innerText = "Siap";
+                micIndicator.classList.replace('bg-red-500', 'bg-indigo-400');
             }
         };
 
-        // 3. Fungsi Download Word (Fixed Library Detection)
+        // --- WORD EXPORT SETUP (FIXED DETECTION) ---
         document.getElementById('downloadBtn').onclick = async () => {
-            const text = transcriptArea.innerText.trim();
-            if (!text) return alert("Rekam suara terlebih dahulu.");
+            const content = transcriptArea.innerText.trim();
+            if (!content) return alert("Belum ada teks untuk disimpan.");
 
-            // Deteksi Library docx (UMD Mode)
+            // Mencari library docx di window (Mode UMD)
             const docxLib = window.docx;
-            if (!docxLib) return alert("Koneksi internet diperlukan untuk memuat library Word.");
+            
+            if (!docxLib) {
+                alert("Library Word belum terload sempurna. Pastikan Anda terhubung ke internet dan coba refresh halaman (Ctrl+F5).");
+                return;
+            }
 
             try {
                 const doc = new docxLib.Document({
                     sections: [{
                         children: [
                             new docxLib.Paragraph({
-                                children: [new docxLib.TextRun({ text: "VOICESCRIPT AI REPORT", bold: true, size: 32 })]
+                                children: [
+                                    new docxLib.TextRun({ text: "HASIL TRANSKRIPSI VOICESCRIPT AI", bold: true, size: 32 }),
+                                ],
                             }),
                             new docxLib.Paragraph({ text: "" }),
                             new docxLib.Paragraph({
-                                children: [new docxLib.TextRun({ text: text, size: 24 })]
+                                children: [new docxLib.TextRun({ text: content, size: 24 })],
                             }),
                         ],
                     }],
                 });
 
                 const blob = await docxLib.Packer.toBlob(doc);
-                saveAs(blob, `Transkripsi_${Date.now()}.docx`);
+                // Menggunakan FileSaver atau fallback download
+                if (typeof saveAs !== 'undefined') {
+                    saveAs(blob, `Transkripsi_${Date.now()}.docx`);
+                } else {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "Transkripsi.docx";
+                    a.click();
+                }
             } catch (err) {
                 console.error(err);
-                alert("Gagal membuat Word: " + err.message);
+                alert("Gagal membuat file: " + err.message);
             }
         };
 
-        // Helper
-        function updateStats() {
-            const text = transcriptArea.innerText.trim();
-            document.getElementById('wordCount').innerText = text ? text.split(/\s+/).length : 0;
-        }
-
         document.getElementById('clearBtn').onclick = () => {
-            if(confirm("Hapus teks?")) {
+            if(confirm("Hapus semua teks?")) {
                 finalTranscript = '';
                 transcriptArea.innerHTML = '';
-                updateStats();
+                wordCountSpan.innerText = '0';
             }
         };
     </script>
